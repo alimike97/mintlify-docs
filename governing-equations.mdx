@@ -1,0 +1,67 @@
+---
+title: "Governing Equation"
+---
+
+CompFlowLab solves the coupled conservation equations for mass, momentum, total energy, and species mass fractions:
+
+```math
+\frac{\partial q}{\partial t} + \frac{\partial f}{\partial x} - \frac{\partial f_v}{\partial x} = H
+```
+
+where $q$ is the vector of conserved variables defined as
+
+```math
+q = \begin{pmatrix} \rho \\ \rho u \\ \rho h^0 - p \\ \rho Y_l \end{pmatrix}
+```
+
+Here, $\rho$ is the density, $u$ is the velocity in the x-direction, and $Y_l$ is the mass fraction of the $l^{th}$ species. The total specific enthalpy $h^0$ is defined as
+
+```math
+h^0 = h + \frac{1}{2} u^2 = \sum_{l}^N h_l Y_l + \frac{1}{2} u^2
+```
+
+# Fluxes
+
+The fluxes are decomposed into inviscid $f$ and viscous $f_v$ components:
+
+```math
+f = \begin{pmatrix} \rho u \\ \rho u^2 + p \\ \rho u h^0 \\ \rho u Y_l \end{pmatrix}, \quad f_v = \begin{pmatrix} 0 \\ \tau_{xx} \\ u \tau_{xx} - q_x \\ \rho D_l \frac{\partial Y_l} { \partial x} \end{pmatrix}
+```
+
+Here, $D_l$ denotes the effective diffusion coefficient of the $l^th$ species into the mixture. In practice, this approximates multicomponent diffusion as the binary diffusion of each species into a mixture.
+
+# Heat Flux
+
+The heat flux in the x-direction, $q_x$, is defined as
+
+```math
+q_x = -K \frac{\partial T}{\partial x} + \sum_{l=1}^N \rho D_l \frac{\partial Y_l}{\partial x} h_l + q_{source}
+```
+
+where:
+
+- $K$ is the thermal conductivity,
+- $T$ is the temperature,
+- $Y_l$ are the species mass fractions,
+- $h_l$ are the species specific enthalpies,
+- $q_{source}$ represents volumetric heat sources (e.g., radiation or external heating). \
+  \
+  These three terms correspond to **conduction**, **species diffusion**, and **volumetric heat generation**, respectively.\\
+
+# Shear Stress
+
+The shear stress $\tau_{xx}$ is defined in terms of the molecular viscosity and velocity gradient:\\
+
+```math
+\tau_{xx} = \frac{4}{3} \mu \frac{\partial u}{\partial x}
+```
+
+where $\mu$ is the molecular viscosity.
+
+# Source term
+
+The source term $H$ accounts for chemical reactions and includes one entry per species equation representing the production or destruction rate of the $l^th$ species, $\omega_l$:
+
+```math
+H = \begin{pmatrix} 0 \\ 0 \\ 0 \\ \omega_l \end{pmatrix}
+```

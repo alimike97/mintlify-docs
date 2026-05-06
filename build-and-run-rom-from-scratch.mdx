@@ -1,0 +1,69 @@
+---
+title: "Build and Run ROM from scratch"
+---
+
+CompFlowLab provides a unified interface for full order simulations, data generation, and reduced order model construction. In this tutorial, a typical workflow will be demonstrated which consists of two main steps: running a full order model simulation to generate training data, then building a reduced order model from that data and testing different sampling methods.
+
+## Generate Training Data
+
+In this tutorial, the Sod shock tube case is used. The default input file (`input_file.inp`) controls the simulation parameters. First, the `solver_mode` is set to `FOM` (Full Order Model) to run the high-fidelity simulation. A total simulation time of 0.25 seconds is specified, achieved using a time step `dt` of 5e-5 and 5000 time steps (`num_steps = 5000`). For simplicity, the forward difference Euler time integrator is selected (`time_scheme = FDF`).
+
+The computational domain spans from `x_initial = 0` to `x_final = 1`, discretized into 1000 uniform cells (`cell_number = 1000`).
+
+All boundary conditions are set to `extrapolate`, meaning values at the inlet and outlet are extrapolated from the interior. This is appropriate for the Sod shock tube problem.
+
+To create an initial condition profile the discountinuity with pressure ratio of 10 will be used as following.
+
+```text
+x_interval_ic = [[0,0.5],[0.5,1]]
+rho_ic        = [1,0.125]
+vel_ic        = [0.001,0.001]
+press_ic      = [1,0.1]
+temp_ic       = [300,300]
+```
+
+The gas will be set as `gas_model = Air`. The second-order Roe scheme is used for flux computation (`flux_scheme = 2nd Order Roe`). Limiters are enabled (`limiter = True`) for this demonstration, `minmod` is the option that will be used. Viscous effects are neglected (`viscous = False`) for this case, and NumPy vectorization is enabled for performance (`numpy_vector = True`).
+
+Visualization is enabled, with density, pressure, velocity, and temperature saved every 100 time steps (`update_interval = 100`). Both visualization updates and data saving occur at intervals of 100 steps (`save_interval = 100`).
+
+As this case is not an RDE case, the injection will be disabled (`injection       = False`)
+
+Now we can save this input file and run the simulation with the command:
+
+```bash
+python -O ./compflowlab.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
+```
+
+## Build a PROM
+
+Now that we have generated the training data, we can run the same case using a reduced-order model. To ensure a fair comparison, all settings related to discretization, physics, and time integration remain unchanged. However, we set `solver_mode = PROM` to enable the projected reduced-order model.
+
+The `training_data_dir` is directed to the folder containing the FOM results (.../compflowlab/examples/sod\_shock\_tube/FOM\_results). To use all generated snapshots, we specify the training data limits to cover the entire simulation:
+
+```text
+training_start_iter     = 0
+training_step_iter      = 100
+training_end_iter       = 5000
+```
+
+This configuration includes snapshots from time step 0 to 5000, sampled every 100 steps.
+
+For explicit time integration, the Galerkin projection method is selected (`rom_method = galerkin`). Since this is a linear ROM, the `nl_rom_model` parameter can be set to dummy values. The POD energy threshold is set to `pod_energy = 99.999` to retain the dominant modes.
+
+Hyper-reduction is enabled (`hyper = True`) using the QDEIM method (`hyper_method = QDEIM`).
+
+Now again we can save this input file and run the simulation with the same command shown before:
+
+```bash
+python -O ./compflowlab.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
+```
+
+## Run an Adaptive ROM
+
+To run an adaptive ROM, the solver configuration remains identical to the FOM setup, except we change `solver_mode = AROM`. The direct method is used for basis adaptation (`arom_method = direct`). The adaptive ROM requires an initial window of FOM data to build the initial basis and will continuously evolve this rolling window to adapt the basis as new data becomes available. The size of this initial training window is specified as 10 using the parameter `init_training_win = 10`. Additionally, in the AROM algorithm, the unsampled points need to be updated at a specific frequency. This is controlled by `unsampled_update_freq = 10`, which updates the unsampled points every 10 time steps.
+
+Similarly, Now again we can run the simulation with the command:
+
+```bash
+python -O ./compflowlab.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
+```

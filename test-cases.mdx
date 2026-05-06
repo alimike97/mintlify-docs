@@ -1,0 +1,80 @@
+---
+title: "Test Cases"
+---
+
+Several example cases are provided in `compflowlab/examples` to help you become familiar with the input file formatting and the various solver outputs. The default input files are capable of running any of these cases out of the box; however, building a reliable and functional ROM from them may require some basic knowledge of reduced order modeling.
+
+## Sod Shock Tube
+
+The Sod shock tube is a classical Riemann problem used to validate compressible flow solvers. It consists of a one-dimensional domain initially divided by a diaphragm at the center, with two regions of stationary gas at different pressures and densities:
+
+- Left region: high pressure and high density
+- Right region: low pressure and low density
+
+At $t = 0$, the diaphragm is removed, generating a wave structure that includes a rarefaction wave traveling leftward, a contact discontinuity, and a shock wave traveling rightward. The solution evolves as a self-similar flow and provides an exact analytical solution, making it an ideal benchmark for assessing the accuracy of numerical schemes, particularly their ability to capture discontinuities without spurious oscillations.
+
+<video src="/videos/sod_shock.mp4" controls />
+
+## Sedov Blast Wave
+
+The Sedov blast is a classical test case for compressible flow solvers that models a point explosion/detonation in a uniform medium. The problem consists of an instantaneous release of a finite amount of energy at a single point in an otherwise quiescent gas with uniform density. The initial condition is singular, with infinite pressure at the origin.
+
+The flow field consists of two strong shocks wave propagating outward from the origin, with a contact discontinuity trailing behind it. Behind the shock, the density drops sharply near the origin, creating a "void" region. The problem has an analytical self-similar solution derived by Sedov, von Neumann, and Taylor, making it an excellent benchmark for validating numerical schemes in highly compressible, strongly shocked flows.
+
+This test case is particularly useful for verifying the robustness of shock-capturing methods and the ability of the solver to handle strong discontinuities and near-vacuum conditions.
+
+<video src="/videos/sedov.mp4" controls />
+
+## Colliding Shocks
+
+The two colliding shocks test case models the head-on collision of two strong shock waves propagating toward each other in a one-dimensional domain. Initially, two regions of high-pressure gas are separated by a low-pressure region at the center, with the left and right states moving inward. Upon collision, the shocks interact and generate a single, stronger shock that propagates outward in both directions, leaving behind a region of extremely high pressure and temperature at the center.
+
+This problem tests the solver's ability to handle strong nonlinear wave interactions and the formation of new discontinuities. The collision produces a complex wave structure with multiple shock interactions, making it a challenging benchmark for assessing the robustness of Riemann solvers and the ability of the numerical scheme to maintain monotonicity and accuracy in the presence of extreme pressure and density gradients. Unlike the Sod shock tube or Sedov blast, this test case lacks an analytical solution and is typically evaluated against highly refined numerical reference solutions.
+
+<video src="/videos/colliding_shock.mp4" controls />
+
+## Double Diaphragm Sod Shock Tube
+
+The double diaphragm Sod shock tube is an extension of the classical Sod shock tube problem, featuring two diaphragms placed at different locations within the domain. The domain is divided into three distinct regions with varying pressure and density conditions, typically configured as high-pressure region in the middle with two low-pressure regions on either side, or vice versa. When both diaphragms are removed simultaneously, the resulting flow field exhibits complex wave interactions, including multiple rarefaction waves, contact discontinuities, and shocks that propagate outward and interact with one another.
+
+This test case provides a more stringent validation of compressible flow solvers than the single Sod shock tube, as the wave interactions create a richer structure with multiple discontinuities that can challenge the accuracy and robustness of numerical schemes and reduced order models.
+
+<video src="/videos/double_sod_shock.mp4" controls />
+
+## Free Standing Flame
+
+The free standing flame test case models a premixed H2-O2 laminar flame propagating through a combustible gas mixture in a one-dimensional domain. The problem consists of a flame front separating unburned reactants on one side from burned products on the other, with the flame propagating at a characteristic laminar flame speed determined by the balance between chemical reaction and thermal diffusion. The solution captures the internal structure of the flame, including the preheat zone, reaction zone, and post-flame equilibrium region.
+
+This test case is used to validate solvers that couple compressible flow equations with reacting flow physics. It tests the ability of the numerical scheme to resolve stiff chemical source terms, maintain accurate temperature and species profiles, and capture the correct flame speed without introducing artificial numerical dissipation that can artificially thicken or stabilize the flame. Unlike purely hydrodynamic test cases, the free standing flame introduces additional challenges related to stiffness, chemical time scales, and the coupling between fluid dynamics and chemical kinetics, making it an essential benchmark for reacting flow simulations.
+
+<Frame>
+  ![Free Flmae](/images/free_flmae.png)
+</Frame>
+
+## Transient Flame
+
+The transient flame test case is similar to the free standing flame but with a key difference in the boundary conditions. While the free standing flame is typically configured with inflow boundary conditions that hold the flame stationary, the transient flame uses boundary conditions that allow the flame to propagate freely from left to right across the domain. The simulation captures the unsteady motion of the flame as it travels through the combustible mixture, with the flame front moving at the characteristic laminar flame speed relative to the unburned reactants.
+
+This test case validates the solver's ability to handle a moving flame front that traverses the computational domain. It tests the numerical scheme's accuracy in capturing the flame structure and propagation speed under unsteady conditions, as well as the correct handling of inflow and outflow boundaries as the flame approaches the domain exit. Unlike the stationary free standing flame, the transient flame provides a more realistic representation of flame propagation in practical combustion systems and challenges the solver's ability to maintain solution quality as the flame moves relative to the fixed computational grid.
+
+<video src="/videos/transient_flame.mp4" controls />
+
+## Wall-Reflected Strong Detonation Ignition
+
+The wall reflected 1D detonation ignition test case models the initiation of a detonation wave in a premixed hydrogen-oxygen-argon mixture via shock reflection. The problem combines the challenging features of both shock dynamics and chemical reactions, making it a rigorous benchmark for reacting flow solvers.
+
+A computational domain of length $12 cm$ is discretized with 2000 uniform finite volume cells. An incident shock wave propagates from the right into a quiescent $H_2-O_2-Ar$ mixture (molar ratio 2:1:7). The initial shock compression raises the temperature and pressure but remains insufficient to trigger immediate chemical reactions. Upon impact with the left hard wall ($u = 0$), the shock reflects, further compressing the mixture to conditions necessary for ignition. After a finite induction time, chemical reactions initiate and rapidly develop into a detonation wave that propagates at high speed, eventually overtaking the incident shock.
+
+This test case validates the solver's ability to capture the complex chemical kinetics, including shock reflection, ignition delay, and the transition from deflagration to detonation.
+
+<video src="/videos/detonation.mp4" controls />
+
+## Rotating Detonation Engine (RDE)
+
+The 1D RDE test case models the physics of a rotating detonation engine in a one-dimensional annular representation. Unlike traditional detonation tube problems, the RDE configuration captures the continuous propagation of one or more detonation waves around an annular combustor, where fresh reactants are continuously injected and detonation burns reactants. In the 1D formulation, the azimuthal direction is unwrapped into a linear domain with periodic boundary conditions, allowing the detonation wave to circulate continuously.
+
+The problem involves the interaction between the detonation wave and the injection of fresh reactants. The flow field is characterized by a strong detonation front propagating through the reactants, followed by a trailing expansion region.
+
+This test case is essential for validating solvers and ROMs designed for rotating detonation engine simulations, as it challenges the numerical scheme's ability to maintain a stable, self-sustaining detonation wave under continuous flow conditions. It tests the accurate resolution of the detonation complex structure, the correct handling of injection, and the long-time stability of the solution in a periodic traveling wave configuration.
+
+<video src="/videos/RDE.mp4" controls />

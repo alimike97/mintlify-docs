@@ -1,0 +1,237 @@
+---
+title: "Inputs, Configuration & Outputs"
+description: "CompFlowLab simulations are configured through input files and produce solution data stored in a specified working directory. This section describes the required inputs, their structure, and the generated outputs."
+---
+
+# Inputs
+
+### **1. Command-Line Arguments**
+
+CompFlowLab requires two inputs when executed from the command line:
+
+- Working directory\
+  Directory where all simulation outputs will be stored. It is recommended to use the test case folder.
+- Input file (`.inp`)\
+  A configuration file that defines the simulation setup, including physical parameters, numerical settings, and ROM options.
+
+Example of Sod Shock Tube:
+
+```bash
+python -O ./compflowlab.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
+```
+
+### 2. Input File Structure
+
+The `.inp` file contains all parameters required to run a simulation. It is organized into logical sections, each controlling a specific part of the simulation.
+
+This section provides a complete reference for all parameters available in the CompFlowLab input file. Parameters are grouped by section and include type, allowed values, and descriptions.
+
+**_Solver_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `solver_mode` | str | Main solver | FOM, PROM, AROM, QROM, NLROM |
+
+- FOM: full order model
+- PROM: linear projection ROM
+- AROM: adaptive ROM
+- QROM: quadratic ROM
+- NLROM: non-linear ROM
+
+**_Time Integration_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `dt` | float | Physical time step | \>0 (ex: 1e-6) |
+| `num_steps` | int | Number of time steps | \>0 (ex: 3000) |
+| `time_scheme` | str | Time integration scheme | FDF, SSPRK2, SSPRK3, BDF |
+
+- FDF: Forward Difference Euler - Explicit
+- SSPRK2: Strong Stability Preserv. RK2 – Explicit
+- SSPRK3: Strong Stability Preserv. RK3 – Explicit
+- BDF: Backward Difference Euler – Implicit
+
+<Note>
+  _The BDF method uses finite differences to compute the Jacobian in reacting flow cases, which might make it very stiff and hard to converge if the time step is too large._
+</Note>
+
+**_Space Discretization_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `x_initial` | float | Start of Domain | \>0 |
+| `x_final` | float | End of Domain | \>x\_initial |
+| `cell_number` | int | Number of uniform computational cells | \>0 |
+
+**_Inlet Boundary Conditions_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `rho_inlet` | float/str | Density left boundary | constant/periodic/extrapolate/wall |
+| `vel_inlet` | float/str | Velocity left boundary | constant/periodic/extrapolate/wall |
+| `press_inlet` | float/str | Pressure left boundary | constant/periodic/extrapolate/wall |
+| `temp_inlet` | float/str | Temperature left boundary | constant/periodic/extrapolate/wall |
+| `mass_frac_inlet` | float/str | Mass fraction left boundary | constant/periodic/extrapolate/wall |
+
+**_Outlet Boundary Conditions_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `rho_outlet` | float/str | Density right boundary | constant/periodic/extrapolate/wall |
+| `vel_outlet` | float/str | Velocity right boundary | constant/periodic/extrapolate/wall |
+| `press_outlet` | float/str | Pressure right boundary | constant/periodic/extrapolate/wall |
+| `temp_outlet` | float/str | Temperature right boundary | constant/periodic/extrapolate/wall |
+| `mass_frac_outlet` | float/str | Mass fraction right boundary | constant/periodic/extrapolate/wall |
+
+- constant: specified constant value will be imposed.
+- extrapolate: use the nearest inside value at the boundary.
+- periodic: left boundary = right side, and right boundary = left side.
+- wall: zero net velocity
+
+<Info>
+  CompFlowLab uses ghost cells to apply boundary conditions and does not automatically assign values to them. It completely depends on the user’s CFD knowledge in imposing physically valid boundary conditions.
+</Info>
+
+**_Initial Condition_**
+
+<Tip>
+  Initial conditions can be specified in two different ways:
+
+  (1) Using a pre-generated profile saved in the same format as a CompFlowLab primitive variable output file (`.npy`).
+
+  (2) Defining a few intervals, with the location and primitive variables specified for each interval.
+</Tip>
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `ic_path` | str | Initial condition profile path | - |
+| `x_interval_ic` | float | Primitive variables specified for each domain interval | - |
+
+<Info>
+  If specifying variables using intervals, CompFlowLab always requires values for mass fractions. For non-reacting flows, dummy values can be provided to `mass_frac_ic.`
+</Info>
+
+**_Gas Model_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `gas_model` | str | Gas model | Air, path to .yaml or .inp |
+| `flux_scheme` | str | Flux scheme | 2nd Order Roe |
+| `limiter` | bool | Flux limiter activation | True/False |
+| `limiter_method` | str | Limiter Method | minmod, barth |
+| `viscous` | bool | Viscous terms | True/False |
+| `numpy_vector` | bool | Use NumPy vectorization | True/False |
+
+**_Visualization_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `visual` | bool | Plot visuals while running | True/False |
+| `save_visual` | bool | Save plots | True/False |
+| variable# | str | Variable to plot | see below |
+
+Available variables to plot:
+
+- Density \[kg/m3\]
+- Velocity \[m/s\]
+- Pressure \[Pa\]
+- Temperature \[K\]
+- MF: Mass Fraction of first species \[-\]
+- Heat Release \[W/m3\]
+
+**_Saving_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `save_interval` | int | Results save interval | \>0 (ex:10) |
+
+**_Profiling_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `profiling` | bool | Profile performance while running | True/False |
+
+<Info>
+  The profiling results will be saved at the working directory as `.prof` format. It is recommended to use <u>snakeviz</u> to visualize the profiling results.
+</Info>
+
+**_Injection_**
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `injection` | bool | Injection model | True/False |
+| `injection_state_dir` | str | Path to premixed injection gas state | - |
+
+<Warning>
+  Injection section is only applicable for 1D RDE test case and must be set as False for any other test case.
+</Warning>
+
+<Info>
+  The `injection_state_dir` must point to a `.npy` file which follows the same format as CompFlowLab primitive variable output file.
+</Info>
+
+**_ROM Setup_**
+
+<Warning>
+  These properties will be read if any ROM methods are used.
+</Warning>
+
+| Parameter | Type | Description | Allowed Values |
+| --- | --- | --- | --- |
+| `rom_method` | str | ROM projection method | galerkin, lspg |
+| `nl_rom_model` | str | Non-linear ROM method | rbf, gpr |
+| `arom_method` | str | Adaptive ROM method | direct, svd, isvd, ojas, grouse, past |
+| `pod_energy` | float | POD residual energy | \>0 (ex: 99.9) |
+| `hyper` | bool | Use hyper-reduction | True/False |
+| `hyper_method` | str | Hyper-reduction method | QDEIM, GappyPODE, ECWS, FGS |
+| `sampling_rate` | float | Rate of cells sampled in hyper-reduction in percentage | \>0 (ex: 2) |
+| `init_training_win` | int | Adaptive ROM initial window size | \>0 (ex:10) |
+| `unsampled_update_freq` | int | Adaptive ROM unsampled cells update frequency | \>0 (ex:10) |
+| `training_data_dir` | str | Path to directory of training snapshots | - |
+| `training_start_iter` | int | Start index of training snapshots | \>0 (ex: 0) |
+| `training_step_iter` | int | Step index of training snapshots | \>0 (ex: 10) |
+| `training_end_iter` | int | End index of training snapshots | \>0 (ex: 5000) |
+| `rom_basis_generate` | bool | Generate POD basis from scratch | True/False |
+| `rom_basis_dir` | str | Path to directory of precomputed basis | - |
+
+<Card title="ROM Methodology" icon="arrow-up-right-from-square" horizontal="false" href="reduced-order-modeling-rom">
+  Further details about Reduced Order Modeling under Methodology section.
+</Card>
+
+# Outputs
+
+### **1. Field Data**
+
+Unsteady field data represents the time evolution of an unsteady field at the time step iteration interval specified by `save_interval` in input file. Each field data is written in a NumPy binary file containing a single NumPy array with two dimensions. The first dimension is the number of variables, the second is the number of cells in the computational mesh.
+
+Primitive variable indices are as following:
+
+| Index | Variable | Unit |
+| --- | --- | --- |
+| 0 | density | \[kg/m3\] |
+| 1 | velocity | \[m/s\] |
+| 2 | pressure | \[Pa\] |
+| 3 | temperature | \[K\] |
+| 4: | species mass fractions (only in reacting flows) | \[-\] |
+| -1 | heat release rate (only in reacting flows) | \[W/m3\] |
+
+Conservative variable indices are as following:
+
+| Index | Variable | Unit |
+| --- | --- | --- |
+| 0 | mass | \[kg/m3\] |
+| 1 | momentum | \[kg\*m/s/m3\] |
+| 2 | total energy | \[J/m3\] |
+| 3: | species mass | \[kg/m3\] |
+
+### **2. Visualization**
+
+During simulation runtime, plotted visuals will be saved under `working_dir/plots` if `save_visual=True` in input file.
+
+<Tip>
+  This visualization serves only as a basic tool to inspect results during the initial stages. It is recommended that users implement their own customized post-processing scripts to visualize results according to their specific requirements.
+</Tip>
+
+<Warning>
+  When CompFlowLab is run on Linux, interactive plots cannot be displayed during the simulation due to Linux environment limitations. They can only be accessed after the visualizations are saved (i.e., `save_visual=True`).
+</Warning>

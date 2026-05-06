@@ -1,0 +1,88 @@
+---
+title: "Tests"
+---
+
+## Overview
+
+The test suite provides comprehensive coverage for the simulation framework's core components, including physics models (Ideal Air and Reacting Flow), reduced order modeling (ROM) capabilities, time integration schemes, and utility functions. Tests are organized by module to ensure correctness, numerical stability, and proper integration between components.
+
+All tests can be run using the `pytest` package:
+
+```bash
+python -m pytest tests/
+```
+
+## Physics Tests
+
+### Ideal Air
+- **test_ideal_air_prim_cons_roundtrip** – Verifies that converting primitive variables (density, velocity, pressure, temperature) to conservative variables and back recovers the original state for calorically perfect ideal gas. Uses uniform flow conditions with air as the working fluid.
+- **test_ideal_air_d_flux_dx_uniform_flow_near_zero** – Checks that flux gradients (d_flux_dx) vanish for a uniform flow field. This validates that the flux difference calculation produces zero gradients when the flow has no spatial variation.
+- **test_ideal_air_residual_uniform_near_zero** – Confirms that Roe flux residuals approach zero for uniform initial conditions with extrapolation boundary conditions. Interior cells should have near-zero residuals in the absence of flow gradients.
+
+### Single-Step Reacting Flow
+- **test_single_step_prim_cons_roundtrip** – Validates primitive-to-conservative roundtrip conversion for reacting flow with mass fractions. Uses a minimal gas lookup table with constant properties. Tolerance accounts for thermochemical closure and energy split effects.
+- **test_single_step_cache_cantera** – Ensures Cantera property caching correctly populates required fields including sound speed, internal energy per mass, mixture enthalpy, specific heat at constant pressure (cp), and specific heat at constant volume (cv).
+- **test_reacting_flow_imports** – Verifies that the Reacting_Flow module imports successfully and exposes the required converter functions (prim2cons_converter, residual_calculator).
+
+
+## Time Integration Tests
+
+### Forward Difference Formula (FDF)
+- **test_fdf_explicit_euler** – Confirms explicit Euler time advancement: Q_new = Q_old + dt × dQ/dt. Uses a simple three-state vector with prescribed time derivative.
+
+### SSPRK2 (Strong Stability Preserving Runge-Kutta Order 2)
+- **test_ssprk2_fom_heun_formula** – Validates Heun's method for full-order models using the two-stage formula: q1 = Q + dt×k0, q2 = q1 + dt×k1, Q_new = 0.5×(q1+q2). Uses mocked residual evaluations.
+- **test_ssprk2_rom_hyper_reduced** – Tests SSPRK2 with hyper-reduction on sampled degrees of freedom, verifying that the reduced state is correctly expanded for residual evaluation and then reduced back.
+
+### SSPRK3 (Strong Stability Preserving Runge-Kutta Order 3)
+- **test_ssprk3_fom_three_stage** – Verifies three-stage Runge-Kutta integration with the formula: q1 = Q + dt×k0, q2 = q1 + dt×k1, q3 = (2Q/3) + (q2 + 0.5×dt×k2)/3, Q_new = q3 + 0.5×dt×k3. Confirms three residual evaluations occur.
+- **test_ssprk3_rom_hyper_reduced** – Tests SSPRK3 with hyper-reduction across three stages, verifying proper expansion/reduction of sampled degrees of freedom and correct intermediate state updates.
+
+### BDF (Backward Difference Formula)
+- **test_bdf_newton_constant_flux** – Confirms implicit BDF matches explicit update for constant flux: $Q_{n+1} = Q_n + dt × k$. Uses Newton iteration with constant residual to verify convergence.
+- **test_bdf_implicit_residual_linear** – Verifies that the implicit BDF residual function vanishes at the solution point (Q_n + dt × k) for linear constant flux problems, confirming correct residual formulation.
+
+
+## Utility Tests
+
+### Reshape Functions
+- **test_results_solver2user_and_user2solver_roundtrip** – Confirms roundtrip conversion between solver array format (1D with ghost cells) and user format (2D: state variables × cells including ghosts). Verifies data integrity through conversion cycle.
+- **test_user_solver_index_converter** – Validates index mapping between user coordinates (cell-based indices) and solver coordinates (1D raveled indices). Tests conversion in both directions.
+- **test_solver_add_eliminate_ghost_roundtrip** – Tests ghost cell addition and removal roundtrip. Verifies that interior cell data is preserved when adding four ghost cells (two on each side) and then removing them.
+- **test_find_mass_fraction_full** – Verifies mass fraction array completion by adding a closure species to ensure sum of mass fractions equals 1.0 across all cells.
+- **test_find_mass_fraction_full_cantera** – Checks Cantera-compatible mass fraction formatting, ensuring the output shape matches expected dimensions (1 × cells × species).
+- **test_assemble_snapshots** – Tests snapshot assembly from saved iteration files, verifying that data is correctly collected at specified training intervals and reshaped appropriately.
+
+### Input Reading
+- **test_read_input_file_parsing** – Verifies input file parsing ignores comments (lines starting with #) and empty lines, correctly extracting key-value pairs as strings for later type conversion.
+- **test_read_chem_file_eval** – Confirms chemical file evaluation correctly parses Python literals (lists, floats, strings) from the file content using safe evaluation.
+- **test_init_solver_param_air_ic_path** – Validates solver parameter initialization with IC file, checking that grid spacing (dx), coordinates (x), and initial condition data are correctly loaded and sized.
+
+### Initialization
+- **test_init_injection** – Tests injection zone boundary calculations, verifying the correct identification of cells for injection addition and removal based on specified portion parameters.
+- **test_init_time_integration** – Verifies time integration module loading for all schemes (FDF, BDF, SSPRK2, SSPRK3), confirming each returns a module with the required advance_time method.
+- **test_init_physics_air** – Confirms Ideal_Air physics module loads correctly and exposes the expected converter and calculator functions.
+- **test_init_state_air_shapes** – Checks state array dimensions for air simulations, verifying that Q_cons, Q_prim, cons_results_save, and prim_results_save have correct sizes based on cell_number, num_state_var, and num_prim_var.
+- **test_init_dir_creates_results** – Verifies results directory creation in the working directory, with subfolder naming based on solver mode (FOM_results or ROM_results).
+- **test_init_dir_rom_subfolders** – Tests ROM subfolder structure generation when save_visual is enabled, confirming creation of cons_prim and plots subdirectories.
+- **test_ic_generator_air_from_ic_array** – Confirms initial condition generator correctly loads IC arrays from file and distributes them to the full domain including ghost cells, with proper handling of primitive variable ordering.
+
+
+## ROM Tests
+
+### Basis Adaptation
+- **test_adapt_basis_updates_basis_shape** – Tests all basis adaptation methods (direct, svd, ojas, grouse, isvd, past) to ensure they return the correct shape (N_dof × N_modes) and produce finite values when updating the basis with new snapshots.
+- **test_adapt_basis_direct_preserves_window_roll** – Confirms that the direct adaptation method correctly maintains the rolling window dimensions for snapshot matrices (F and Q_R) when new snapshots are added.
+
+### Sampling Methods
+- **test_hyper_precompute_gnat** – Validates GNAT (Gauss-Newton Approximated Tensor) hyper-reduction precomputation produces the correct projection matrix (basis @ pinv(basis[S, :])) and returns sample indices of appropriate size.
+- **test_hyper_precompute_qdeim** – Verifies QDEIM (QR-based Discrete Empirical Interpolation Method) sampling index generation returns valid sample points for hyper-reduction.
+- **test_GNAT_sample_point_finder** – Checks that GNAT point selection returns valid cell indices within the domain and that all selected indices are unique.
+- **test_QDEIM_sample_point_finder** – Ensures QDEIM selects at least rank(B) sample points and returns integer-type indices suitable for matrix row selection.
+- **test_GappyPODE_sample_point_finder** – Confirms GappyPODE (Gappy Proper Orthogonal Decomposition with Empirical Interpolation) returns exactly the requested number of sample points for basis reconstruction.
+- **test_FGS_sample_point_finder** – Validates FGS (Feature Guided Sampling) point selection using basis and snapshot data, ensuring sample indices are within valid cell ranges.
+- **test_ECSW_sample_point_finder_converges_rank_one** – Tests ECSW (Energy-Conserving Sampling and Weighting) convergence behavior for rank-1 snapshot matrices, verifying the algorithm exits with at least one sample point.
+- **test_hyper_precompute_ecsw_integration** – Verifies ECSW hyper-reduction integration by checking that precomputation returns the required data structures for reduced-order model evaluation.
+
+
+

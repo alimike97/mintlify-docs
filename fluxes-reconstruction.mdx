@@ -1,0 +1,30 @@
+---
+title: "Fluxes / Reconstruction"
+---
+
+## Roe Flux Scheme
+
+CompFlowLab uses second-order spatial reconstruction for the Roe flux scheme. The Roe scheme is an approximate Riemann solver widely used in computational fluid dynamics for solving hyperbolic conservation laws, particularly the Euler and Navier-Stokes equations. Developed by Philip Roe in 1981, it provides an exact solution to a locally linearized Riemann problem at each cell interface.
+
+At each interface, the Roe scheme replaces the nonlinear system of conservation laws:
+
+```math
+\frac{\partial q}{\partial t} + \frac{\partial F(q)}{\partial x}=0
+```
+
+with a locally linearized system:
+
+```math
+\frac{\partial q}{\partial t} + A_{roe}\frac{\partial q}{\partial x}=0
+```
+
+where $q$ is the vector of conserved variables (density, momentum, energy) and $A_{roe}$ is the Roe-averaged Jacobian matrix evaluated at interface-averaged states.
+
+## Limiter
+
+Reconstruction is performed with slope limiters to maintain monotonicity and prevent spurious oscillations near discontinuities. Two limiter methods are available:
+
+- `minmod`: A classic slope limiter that selects the minimum slope among neighboring cells, providing robust but slightly dissipative behavior.
+- `barth`: A less dissipative limiter based on Barth-Jespersen's approach, which preserves monotonicity while maintaining higher accuracy in smooth regions.
+
+The reconstruction process computes left and right states at cell interfaces from cell-averaged conservative variables, enabling high-resolution solutions for both inviscid and viscous flow problems.

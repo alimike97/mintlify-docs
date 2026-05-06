@@ -1,0 +1,91 @@
+---
+title: "Adaptive Basis"
+---
+
+When the adaptive ROM model is used (`solver_mode = AROM`), the reduced basis is updated dynamically. Several options for basis adaptation are available in CompFlowLab that can be selected via parameter \``arom_method`\` in input file.
+
+<Danger>
+  All of the methods described below are applicable only when the adaptive ROM framework is used, where the basis evolves dynamically as new snapshots become available.
+</Danger>
+
+## `direct`: Direct Method
+
+Solves a minimization problem to compute a new basis that best fits the training window of snapshots.
+
+```math
+V^{n} = argmin\left\|V^{n} (V^{n-1})^{\dagger} {Q}^n - {Q}^n \right\|_F^2,
+```
+
+where $Q^n$ denotes a data matrix collecting estimated full-order states  over a temporal window.
+
+## `svd`: Performing SVD from scratch
+
+Updates the basis by performing a full SVD on the training snapshot matrix (F) and retaining the dominant left singular vectors. This method is computationally more expensive but provides an optimal low-rank representation of the accumulated snapshots.
+
+## `ojas`: Oja's Rule
+
+Employs Oja's rule, a simple rank-one update of the form
+
+```math
+(V^{n} = V^{n-1} + \eta \, q_{new} (q_{new}^T V^{n-1}))
+```
+
+where $\eta$ is the learning rate. The updated basis is orthonormalized via QR decomposition.
+
+## `grouse`: GROUSE Algorithm
+
+Implements the GROUSE (Grassmannian Rank-One Update Subspace Estimation) algorithm. The basis is updated by moving along a geodesic on the Grassmann manifold:
+
+```math
+V^{n} = V^{n-1} + \left( \frac{\cos(\alpha) - 1}{\|p\|} p + \frac{\sin(\alpha)}{\|r\|} r \right) \frac{q^T}{\|q\|}
+```
+
+where $p = V^{n-1} q$ is the projection of the new snapshot onto the current subspace,
+
+```math
+r = q_{new} - p
+```
+
+is the residual, and $\alpha = \eta |r| |p|$ is the step size parameter.
+
+## `isvd`: Incremental SVD
+
+Performs incremental SVD (iSVD) with a forgetting factor. The algorithm updates the basis by augmenting the current basis $V^{n-1}$ with the normalized residual of the new snapshot:
+
+```math
+U_{\text{aug}} = [V^{n-1}, \; q_{\perp}]
+```
+
+where
+
+```math
+q_{\perp} = frac{(q_{\text{new}} - V^{n-1} p)}{|q_{\text{new}} - V^{n-1} p|}
+```
+
+and
+
+```math
+p = (V^{n-1})^T q_{\text{new}}
+```
+
+The SVD of a small $(K+1) \times (K+1)$ core matrix is computed, and the basis is truncated to the desired rank. A forgetting factor allows exponential decay of older information.
+
+## `past`: PAST Algorithm
+
+Utilizes the PAST (Projection Approximation Subspace Tracking) algorithm, which approximates the subspace by minimizing a projection error criterion. The method uses a recursive least squares (RLS) update with forgetting factor $\lambda$:
+
+```math
+P^{n} = \frac{1}{\lambda} \left( P^{n-1} - \frac{P^{n-1} w w^T P^{n-1}}{\lambda + w^T P^{n-1} w} \right)
+```
+
+```math
+V^{n} = V^{n-1} + (q_{\text{new}} - V^{n-1} w) (P^{n} w)^T
+```
+
+where
+
+```math
+w = (V^{n-1})^T q_{\text{new}}
+```
+
+This efficiently tracks the dominant subspace without performing full SVD.

@@ -1,0 +1,61 @@
+---
+title: "Available Models"
+---
+
+CompFlowLab is primarily developed to test and rapidly implement ideas related to reduced order modeling (ROM) of fluids. The framework supports multiple types of ROMs, focusing primarily on intrusive ROMs, which have direct access to the solver rather than relying solely on training data. The following provides a brief overview of the methodology behind the ROMs available in CompFlowLab.
+
+## `PROM`: Linear POD basis
+
+The simplest method of representing low rank approximation of the full order model state, denoted by $\tilde{q}$ as follows,
+
+```math
+\tilde{q}(t) = q_{ref} + P^{-1}V{q}_r(t),
+```
+
+where $\tilde{q}$ serves as the approximation of $q$. The reference state, $q_{ref}$, is a constant translation vector which is common concept in fluid dynamics problems, often chosen as the initial solution, $q_{ref} = q(t = t_0)$, or the time-averaged solution defined by
+
+```math
+q_{ref} = \frac{1}{\Delta T} \int q(t) dt.
+```
+
+The trial basis matrix, $V$, and the scaling matrix, $P$. CompFlowLab computes $V$ using the proper orthogonal decomposition (POD) and singular value decompostion (SVD).
+
+## `QROM`: Quadratic nonlinear basis
+
+Nonlinear basis can also be employed to construct a low-dimensional subspace that enhances the approximation of the state variables.
+
+```math
+q(t) = q_{ref} + P^{-1}\big[Vq_r(t)+\bar{V}(q_r(t) \otimes q_r(t))\big]
+```
+
+where $\bar{V}$ denotes a quadratic mapping operator, and $\otimes$ is the Kronecker product restricted to unique terms. The operator $\bar{V}$ is obtained by solving the optimization problem.
+
+```math
+\mathbf{\bar{V}}=\argmin_{\mathbf{\bar{V}}\in\mathbb{R}^{N\times\frac{(n_p \times n_p+1)}{2}}}{\big\|\mathbf{Q} - \mathbf{q}_{\text{ref}} - \mathbf{P}^{-1}[\mathbf{V}\mathbf{Q}_r+\mathbf{\bar{V}}(\mathbf{Q}_r \otimes \mathbf{Q}_r )] \big\|_2^2}+\lambda \|\mathbf{\bar{V}}\|_2^2
+```
+
+$Q_r=V^TQ$ is the projection of $Q$ onto the reduced basis and 𝜆 is a scalar regularization coefficient.
+
+## `NLROM`: Nonlinear error closure
+
+This methodology utilizes Gaussian Process Regression (GPR) and Radial Basis Function (RBF) interpolation to model closure errors in the latent space.
+
+```math
+V_{tot} = [V \quad \bar{V}].
+```
+
+Using the reduced basis $V$ and $\bar{V}$, the time-dependent high-dimensional state $\tilde{q}$ is approximated as
+
+```math
+\tilde{q}(t) = q_{ref} + P^{-1}(Vq_r(t)+\bar{V}\mathcal{N}(q_r(t)))
+```
+
+where the nonlinear operator $\mathcal{N}$ serves as a data-driven machine learning model, representing the discrepancy between the full approximation and its affine part, $Vq_r(t)$. Gaussian process regression (GPR) and radial basis function (RBF) regression are available options in CompFlowLab to learn this nonlinear mapping $\mathcal{N}$.
+
+## `AROM`: Adaptive ROM
+
+Adaptive ROM is dynamically updating the reduced basis during online simulation to locally track evolving system dynamics, thereby achieving high accuracy even in shock-driven regimes. An ideal optimization problem can be defined to update the basis, $V$ and sampling points $S$, simultaneously during the online ROM calculations,
+
+```math
+{V}^n,{S}^n = argmin \| V^n({S}_n^{T}V^n)^{\dagger}{S}_n^T{P}{r}(\hat{q}^n) \|_2^2 
+```

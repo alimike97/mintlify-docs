@@ -1,0 +1,39 @@
+---
+title: "Hyper-Reduction"
+---
+
+To substantially reduce the computational cost associated with model evaluation, the dependence of the projection-based reduced-order model on the full-order dimension must be removed. Approaches designed to achieve this objective are commonly referred to as hyper-reduction techniques. Among these, sparse sampling methods represent the most widely adopted and well-established class. Such approaches evaluate the governing equations, or their nonlinear components, at a limited set of strategically selected degrees of freedom, thereby reducing the computational cost. Throughout this paper, oversampling gappy POD formulation is utilized wherever hyper-reduction is needed. Gappy POD approximating the full-field nonlinear terms through a least-squares regression formulation which builds upon oversampling within the empirical interpolation framework. Accordingly, hyper-reduction adopts the formulation,
+
+```math
+\tilde{f} \approx V (S^T V)^{\dagger} S^T f
+```
+
+Following are some of the methods available in CompFlowLab to find S.
+
+## `GNAT`: Gauss–Newton Approximated Tensor
+
+Selects sampling points based on the GNAT (Gauss–Newton Approximated Tensor) method, which greedily samples points that minimizes the magnitude of the interpolation error.
+
+## `GappyPOD+E`: Eigenvector-based GappyPOD
+
+Eigenvector-based method sampling seeks to minimize the sampling error via a greedy approach. The samples are selected such that they maximizes the smallest singular value.
+
+## `QDEIM`: QR-Based Discrete Empirical Interpolation Method
+
+Implements the QDEIM (QR-based Discrete Empirical Interpolation Method), which selects sampling points by performing a column-pivoted QR decomposition on the transpose of the basis matrix.
+
+<Note>
+  QDEIM yields exactly as many sampling points as the number of modes in the POD basis, therefore it ignores the user-specified sampling rate in input file `sampling_rate`) and always returns a sample count equal to the basis rank.
+</Note>
+
+## `ECSW`: Energy-Conserving Sampling and Weighting
+
+Implements the ECSW (Energy-Conserving Sampling and Weighting) method, which selects sampling points and computes corresponding weights that preserve the projected residual norm.
+
+## `FGS`: Feature-Guided Sampling
+
+This method places the sampling points at the regions corresponding to the highest gradients of representative features, it inherently covers the rows of the basis exhibiting high gradients, leads to better condition numbers and more stability.
+
+<Warning>
+  The FGS method directly leverages the adaptive ROM framework, and currently it is not applicable in the static basis, static sampling methods in CompFlowLab.
+</Warning>
