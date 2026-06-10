@@ -5,20 +5,20 @@ description: "This guide walks you through running your first CompFlowLab simula
 
 <Steps>
   <Step title="Prerequisites">
-    CompFlowLab can be run on both Windows and Linux. For Linux, using Anaconda is recommended. Python 3.9 or newer is required. Also, pip is needed for installing dependencies.
+    CompFlowLab can be run on both Windows and Linux. This package has been tested both using python and anaconda. Python 3.9 or newer is required. Also, pip is needed for installing compflowlab and it's dependencies.
   </Step>
   <Step title="Install Dependencies">
-    All required libraries are listed in `requirements.txt` located in the `misc_tools` directory. They can be installed using `pip`.
+    CompFlowLab can be installed using`pip`:
 
     ```bash
-    pip install -r misc_tools/requirements.txt
+    pip install compflowlab
     ```
   </Step>
   <Step title="Run Your First Simulation">
-    Navigate to the root CompFlowLab directory. CompFlowLab requires two inputs: (1) the working directory where results will be saved (it is recommended to use the test case folder), and (2) the input `.inp` file. The following command runs a 1D shock tube simulation.
+    Navigate to the root CompFlowLab directory. CompFlowLab requires two inputs: (1) the working directory where results will be saved (it is recommended to use the test case folder), and (2) the input configuration files`.inp` file. The following command runs a 1D shock tube simulation.
 
     ```bash
-    python -O ./compflowlab.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
+    python -O ./main.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
     ```
   </Step>
   <Step title="Results">

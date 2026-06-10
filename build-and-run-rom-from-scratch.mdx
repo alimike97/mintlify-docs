@@ -31,7 +31,7 @@ As this case is not an RDE case, the injection will be disabled (`injection     
 Now we can save this input file and run the simulation with the command:
 
 ```bash
-python -O ./compflowlab.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
+python -O ./main.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
 ```
 
 ## Build a PROM
@@ -55,7 +55,7 @@ Hyper-reduction is enabled (`hyper = True`) using the QDEIM method (`hyper_metho
 Now again we can save this input file and run the simulation with the same command shown before:
 
 ```bash
-python -O ./compflowlab.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
+python -O ./main.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
 ```
 
 ## Run an Adaptive ROM
@@ -65,5 +65,5 @@ To run an adaptive ROM, the solver configuration remains identical to the FOM se
 Similarly, Now again we can run the simulation with the command:
 
 ```bash
-python -O ./compflowlab.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
+python -O ./main.py ./examples/sod_shock_tube ./examples/sod_shock_tube/input_file.inp
 ```
